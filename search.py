@@ -110,8 +110,36 @@ def nullHeuristic(state, problem=None):
   return 0
 
 def aStarSearch(problem, heuristic=nullHeuristic):
-  "Search the node that has the lowest combined cost and heuristic first."
-    
+  """
+  A*: saca siempre el nodo con MENOR  f(n) = g(n) + h(n)
+      g(n) = lo que ya caminamos (costo real acumulado)
+      h(n) = lo que creemos que falta (estimacion de la heuristica)
+  """
+  frontera = util.PriorityQueue()                 # 1. cola de prioridad
+  contador = 0                                    # desempate: el que entro primero sale primero
+
+  inicio = problem.getStartState()                # 2. empezamos en el estado inicial
+  frontera.push((inicio, [], 0), (heuristic(inicio, problem), contador))
+  mejor_g = {inicio: 0}                           # mejor g(n) conocido para cada estado
+  expandidos = set()                              # 7. para no expandir dos veces el mismo estado
+
+  while not frontera.isEmpty():
+    estado, acciones, g = frontera.pop()          # el de menor f(n)
+
+    if estado in expandidos:
+      continue
+    if problem.isGoalState(estado):               # 3. prueba de objetivo
+      return acciones                             # 8. lista de acciones
+    expandidos.add(estado)
+
+    for sucesor, accion, costo in problem.getSuccessors(estado):   # 4. sucesores
+      nuevo_g = g + costo                                           # 5. acumulamos g(n)
+      if sucesor not in expandidos and nuevo_g < mejor_g.get(sucesor, float('inf')):
+        mejor_g[sucesor] = nuevo_g                                  # encontramos un camino mejor
+        f = nuevo_g + heuristic(sucesor, problem)                   # 6. f(n) = g(n) + h(n)
+        contador += 1
+        frontera.push((sucesor, acciones + [accion], nuevo_g), (f, contador))
+  return []
   
 # Abbreviations
 bfs = breadthFirstSearch
