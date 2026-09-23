@@ -1,2 +1,2 @@
-# Taller3-Búsqueda-Informada
+# Taller-3-Búsqueda-Informada
 Búsqueda informada con pac-man
