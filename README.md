@@ -1,5 +1,5 @@
 # Taller-3-Búsqueda-Informada
-Búsqueda informada con pac-man
+Búsqueda informada con pac-man y heurística
 
 ## Comandos por actividad
 
