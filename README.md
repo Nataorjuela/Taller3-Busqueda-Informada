@@ -97,6 +97,14 @@ python pacman.py -l openclassic -p SearchAgent -a fn=astar,heuristic=euclideanHe
 
 RESPUESTA: La distancia Manhattan representa mejor el movimiento de Pac-Man porque calcula la distancia exacta sobre la cuadrícula considerando únicamente desplazamientos ortogonales (Norte, Sur, Este y Oeste), lo que corresponde a la solución exacta de un problema relajado sin paredes. A diferencia de la distancia Euclidiana —la cual subestima en mayor medida el costo real al asumir trayectos diagonales en línea recta que Pac-Man no puede ejecutar. 
 
+- ### Actividad 7 – Problema de las cuatro esquinas
+
+Para poder correr el mapa "mediumcorners" fue necesario modificar el mapa ya que este venia encerrado al inicio. 
+
+```bash
+python3 -B pacman.py -l mediumCorners -p SearchAgent -a fn=ucs,prob=CornersProblem
+python3 -B pacman.py -l tinyCorners -p SearchAgent -a fn=ucs,prob=CornersProblem
+```
 
 
 
