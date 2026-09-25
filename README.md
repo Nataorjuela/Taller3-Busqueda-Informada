@@ -106,6 +106,31 @@ python3 -B pacman.py -l mediumCorners -p SearchAgent -a fn=ucs,prob=CornersProbl
 python3 -B pacman.py -l tinyCorners -p SearchAgent -a fn=ucs,prob=CornersProblem
 ```
 
+- ### Actividad 8 – Heurística para las esquinas
+
+Diseñe una función heurística que estime el costo necesario para visitar las esquinas que aún
+no han sido alcanzadas.
+
+```bash
+python3 pacman.py -l mediumCorners -p SearchAgent -a fn=aStarSearch,prob=CornersProblem,heuristic=cornersHeuristicBasic
+```
+Explique por qu´e su heur´ıstica para CornersProblem es admisible. No es suficiente indicar
+´unicamente que “la heur´ıstica funciona”. Debe argumentar por qu´e el valor calculado constituye
+una cota inferior del costo real restante.
+RESPUESTA: Una heur´ıstica es admisible si 0 ≤ h(n) ≤ h∗(n) para todo nodo n, donde
+h∗(n) es el costo real m´ınimo hasta la meta. La funci´on calcula distancias Manhattan (dM ),
+las cuales asumen un plano libre sin paredes. Dado que la presencia de paredes en el laberinto
+solo puede mantener o aumentar la longitud del camino real (nunca acortarlo), la suma de
+distancias Manhattan siempre constituir´a una cota inferior no negativa (h(n) ≤ h∗(n))
+
+- ### Actividad 9. Experimento comparativo
+```bash
+python3 pacman.py -l mediumCorners -p SearchAgent -a fn=ucs,prob=CornersProblem
+python3 pacman.py -l mediumCorners -p SearchAgent -a fn=aStarSearch,prob=CornersProblem,heuristic=nullHeuristic
+python3 pacman.py -l mediumCorners -p SearchAgent -a fn=aStarSearch,prob=CornersProblem,heuristic=cornersHeuristicBasic
+python3 pacman.py -l mediumCorners -p SearchAgent -a fn=aStarSearch,prob=CornersProblem,heuristic=cornersHeuristic
+```
+
 
 
 
