@@ -65,3 +65,24 @@ python pacman.py -l openClassic -k 0 -p SearchAgent -a fn=astar,heuristic=nullHe
 - Los resultados salen en las líneas `Path found with total cost of ...` y `Search nodes expanded: ...`.
 - El tiempo aparece como `0.0 seconds` porque el juego redondea a una décima de segundo y estas búsquedas tardan menos de 1 milisegundo.
 - En los laberintos que tienen comida sobrante (`tinyMaze`, `mediumMaze`, `openClassic`) aparece al final el error `Illegal action Stop`. Pac-Man llega a la meta, pero el juego no termina porque todavía queda comida y no le permite quedarse quieto. **No afecta los resultados.**
+
+- ### Actividad 5 – Distancia Manhattan
+
+```bash
+python pacman.py -l tinyMaze -p SearchAgent -a fn=ucs
+python pacman.py -l tinyMaze -p SearchAgent -a fn=astar,heuristic=nullHeuristic
+
+python pacman.py -l openClassic -k 0 -p SearchAgent -a fn=ucs
+python pacman.py -l openClassic -k 0 -p SearchAgent -a fn=astar,heuristic=nullHeuristic
+```
+
+### Resultados esperados
+
+| Laberinto   | Algoritmo      | Costo | Nodos expandidos |
+|-------------|----------------|-------|------------------|
+| tinyMaze    | UCS            | 10    | 21               |
+| tinyMaze    | A* + h(n) = 0  | 10    | 21               |
+| tinyMaze    | A* + Manhattan | 10    | 10               |
+| mediumMaze  | UCS            | 30    | 32               |
+| openClassic | UCS            | 9     | 63               |
+| openClassic | A* + h(n) = 0  | 9     | 63               |
