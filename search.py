@@ -61,34 +61,58 @@ def tinyMazeSearch(problem):
 
 def depthFirstSearch(problem):
   """
-  Search the deepest nodes in the search tree first [p 85].
-  
-  Your search algorithm needs to return a list of actions that reaches
-  the goal.  Make sure to implement a graph search algorithm [Fig. 3.7].
-  
-  To get started, you might want to try some of these simple commands to
-  understand the search problem that is being passed in:
-  
-  print "Start:", problem.getStartState()
-  print "Is the start a goal?", problem.isGoalState(problem.getStartState())
-  print "Start's successors:", problem.getSuccessors(problem.getStartState())
+  DFS: explora primero el camino mas profundo (usa una PILA).
   """
-
-def breadthFirstSearch(problem):
-  "Search the shallowest nodes in the search tree first. [p 81]"
-      
-def uniformCostSearch(problem):
-  frontera = util.PriorityQueue()
-  contador = 0          # solo para desempatar
-
-  inicio = problem.getStartState()
-  frontera.push((inicio, [], 0), (0, contador))   # (estado, camino, g) con g = 0
-  mejor_g = {inicio: 0}
-  expandidos = set()
+  frontera = util.Stack()
+  frontera.push((problem.getStartState(), []))
+  visitados = set()
 
   while not frontera.isEmpty():
-    estado, acciones, g = frontera.pop()          # sale el de MENOR g(n)
-    if estado in expandidos:
+    estado, acciones = frontera.pop()
+    if estado in visitados:
+      continue
+    if problem.isGoalState(estado):
+      return acciones
+    visitados.add(estado)
+    for sucesor, accion, costo in problem.getSuccessors(estado):
+      if sucesor not in visitados:
+        frontera.push((sucesor, acciones + [accion]))
+  return []
+
+def breadthFirstSearch(problem):
+  "BFS: explora primero los nodos mas cercanos al inicio (usa una COLA)."
+  frontera = util.Queue()
+  inicio = problem.getStartState()
+  frontera.push((inicio, []))
+  visitados = set([inicio])
+
+  while not frontera.isEmpty():
+    estado, acciones = frontera.pop()
+    if problem.isGoalState(estado):
+      return acciones
+    for sucesor, accion, costo in problem.getSuccessors(estado):
+      if sucesor not in visitados:
+        visitados.add(sucesor)
+        frontera.push((sucesor, acciones + [accion]))
+  return []
+
+def uniformCostSearch(problem):
+  """
+  UCS: saca siempre el nodo con MENOR costo acumulado.
+      prioridad  f(n) = g(n)
+  """
+  frontera = util.PriorityQueue()
+  contador = 0          # solo sirve para desempatar (el que entro primero sale primero)
+
+  inicio = problem.getStartState()
+  frontera.push((inicio, [], 0), (0, contador))
+  mejor_g = {inicio: 0}           # el costo mas barato conocido para llegar a cada estado
+  expandidos = set()              # estados que ya revisamos por completo
+
+  while not frontera.isEmpty():
+    estado, acciones, g = frontera.pop()
+
+    if estado in expandidos:      # ya lo expandimos por un camino mas barato
       continue
     if problem.isGoalState(estado):
       return acciones

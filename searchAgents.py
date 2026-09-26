@@ -271,34 +271,36 @@ class CornersProblem(search.SearchProblem):
     
     
   def getStartState(self):
-    "Returns the start state (in your state space, not the full Pacman state space)"
-    
+    """
+    Estado = (posicion, esquinas_visitadas)
+      posicion           -> (x, y) de Pac-Man
+      esquinas_visitadas -> tupla de 4 True/False, en el mismo orden de self.corners
+    Ej: ((5,4), (True, False, False, False)) = estoy en (5,4) y solo visite la 1a esquina.
+    """
+    visitadas = tuple(esquina == self.startingPosition for esquina in self.corners)
+    return (self.startingPosition, visitadas)
+
   def isGoalState(self, state):
-    "Returns whether this search state is a goal state of the problem"
-       
+    "Ganamos cuando las 4 esquinas estan visitadas."
+    posicion, visitadas = state
+    return all(visitadas)
+
   def getSuccessors(self, state):
     """
-    Returns successor states, the actions they require, and a cost of 1.
-    
-     As noted in search.py:
-         For a given state, this should return a list of triples, 
-     (successor, action, stepCost), where 'successor' is a 
-     successor to the current state, 'action' is the action
-     required to get there, and 'stepCost' is the incremental 
-     cost of expanding to that successor
+    Para cada direccion posible: si no hay pared, Pac-Man se mueve
+    y, si cae en una esquina, la marcamos como visitada. Costo = 1.
     """
-    
     successors = []
+    (x, y), visitadas = state
     for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
-      # Add a successor state to the successor list if the action is legal
-      # Here's a code snippet for figuring out whether a new position hits a wall:
-      #   x,y = currentPosition
-      #   dx, dy = Actions.directionToVector(action)
-      #   nextx, nexty = int(x + dx), int(y + dy)
-      #   hitsWall = self.walls[nextx][nexty]
-      pass
-      
-      
+      dx, dy = Actions.directionToVector(action)
+      nextx, nexty = int(x + dx), int(y + dy)
+      if not self.walls[nextx][nexty]:
+        nuevaPos = (nextx, nexty)
+        nuevasVisitadas = tuple(v or (esquina == nuevaPos)
+                                for v, esquina in zip(visitadas, self.corners))
+        successors.append(((nuevaPos, nuevasVisitadas), action, 1))
+
     self._expanded += 1
     return successors
 
@@ -316,24 +318,53 @@ class CornersProblem(search.SearchProblem):
     return len(actions)
 
 
+def esquinasPendientes(state, problem):
+  "Lista de las esquinas que todavia NO se han visitado."
+  posicion, visitadas = state
+  return [c for c, v in zip(problem.corners, visitadas) if not v]
+
+def cornersHeuristicBasica(state, problem):
+  """
+  Heuristica basica (la que sugiere la guia):
+     h(n) = max  d_M(n, c)   para c en las esquinas pendientes
+  "Por lo menos tengo que llegar a la esquina mas lejana."
+  """
+  posicion = state[0]
+  pendientes = esquinasPendientes(state, problem)
+  if not pendientes:
+    return 0
+  return max(util.manhattanDistance(posicion, c) for c in pendientes)
+
 def cornersHeuristic(state, problem):
   """
-  A heuristic for the CornersProblem that you defined.
-  
-    state:   The current search state 
-             (a data structure you chose in your search problem)
-    
-    problem: The CornersProblem instance for this layout.  
-    
-  This function should always return a number that is a lower bound
-  on the shortest path from the state to a goal of the problem; i.e.
-  it should be admissible.  (You need not worry about consistency for
-  this heuristic to receive full credit.)
+  Heuristica propuesta: "ruta Manhattan mas corta por TODAS las esquinas pendientes".
+
+  Imaginamos que el laberinto NO tiene paredes. En ese mundo sin paredes,
+  probamos todos los ordenes posibles de visitar las esquinas que faltan
+  (como mucho 4! = 24 ordenes) y nos quedamos con el recorrido mas corto.
+
+     h(n) = min  [ d_M(n, c1) + d_M(c1, c2) + ... + d_M(c_{k-1}, c_k) ]
+          sobre todos los ordenes (c1, ..., ck) de las esquinas pendientes
+
+  Como con paredes el camino real solo puede ser igual o mas largo,
+  esta h nunca sobreestima (es admisible) y ademas es consistente.
   """
-  corners = problem.corners # These are the corner coordinates
-  walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
-  
-  return 0 # Default to trivial solution
+  from itertools import permutations
+  posicion = state[0]
+  pendientes = esquinasPendientes(state, problem)
+  if not pendientes:
+    return 0
+
+  mejor = float('inf')
+  for orden in permutations(pendientes):
+    total = 0
+    actual = posicion
+    for esquina in orden:
+      total += util.manhattanDistance(actual, esquina)
+      actual = esquina
+    mejor = min(mejor, total)
+  heuristicValue = mejor
+  return heuristicValue
 
 class AStarCornersAgent(SearchAgent):
   "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -397,33 +428,81 @@ class AStarFoodSearchAgent(SearchAgent):
     self.searchFunction = lambda prob: search.aStarSearch(prob, foodHeuristic)
     self.searchType = FoodSearchProblem
 
-def foodHeuristic(state, problem):
+def foodHeuristicBasica(state, problem):
   """
-  Your heuristic for the FoodSearchProblem goes here.
-  
-  This heuristic must be consistent to ensure correctness.  First, try to come up
-  with an admissible heuristic; almost all admissible heuristics will be consistent
-  as well.
-  
-  If using A* ever finds a solution that is worse uniform cost search finds,
-  your heuristic is *not* consistent, and probably not admissible!  On the other hand,
-  inadmissible or inconsistent heuristics may find optimal solutions, so be careful.
-  
-  The state is a tuple ( pacmanPosition, foodGrid ) where foodGrid is a 
-  Grid (see game.py) of either True or False. You can call foodGrid.asList()
-  to get a list of food coordinates instead.
-  
-  If you want access to info like walls, capsules, etc., you can query the problem.
-  For example, problem.walls gives you a Grid of where the walls are.
-  
-  If you want to *store* information to be reused in other calls to the heuristic,
-  there is a dictionary called problem.heuristicInfo that you can use. For example,
-  if you only want to count the walls once and store that value, try:
-    problem.heuristicInfo['wallCount'] = problem.walls.count()
-  Subsequent calls to this heuristic can access problem.heuristicInfo['wallCount']
+  Heuristica 1 (la que sugiere la guia):
+     h(n) = max  d_M(n, f)   para f en la comida restante
+  "Por lo menos tengo que caminar hasta la comida mas lejana (en linea Manhattan)."
   """
   position, foodGrid = state
-  
+  comidas = foodGrid.asList()
+  if not comidas:
+    return 0
+  return max(util.manhattanDistance(position, f) for f in comidas)
+
+def distanciasDesde(origen, walls):
+  """
+  BFS sobre el laberinto: devuelve un diccionario {celda: distancia REAL
+  (respetando paredes) desde 'origen' hasta esa celda}.
+  """
+  distancias = {origen: 0}
+  cola = util.Queue()
+  cola.push(origen)
+  while not cola.isEmpty():
+    x, y = cola.pop()
+    for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+      vecino = (x + dx, y + dy)
+      if not walls[vecino[0]][vecino[1]] and vecino not in distancias:
+        distancias[vecino] = distancias[(x, y)] + 1
+        cola.push(vecino)
+  return distancias
+
+def distanciaLaberinto(a, b, problem, usarCache=True):
+  """
+  Distancia REAL entre a y b dentro del laberinto (respetando paredes).
+  Con usarCache=True guarda el BFS de cada punto en problem.heuristicInfo
+  para no repetir el mismo calculo miles de veces.
+  """
+  if not usarCache:
+    return distanciasDesde(a, problem.walls)[b]
+  if a not in problem.heuristicInfo:                     # si no lo hemos calculado...
+    problem.heuristicInfo[a] = distanciasDesde(a, problem.walls)
+  return problem.heuristicInfo[a][b]                     # ...si ya existe, lo reutilizamos
+
+def foodHeuristic(state, problem, usarCache=True):
+  """
+  Heuristica 2 (propuesta): "las dos comidas mas separadas".
+
+  Idea: de toda la comida que queda, busco las dos comidas A y B que estan
+  mas lejos una de la otra (en distancia real del laberinto, d_L).
+  Pac-Man tiene que pasar por las dos, asi que como minimo debe:
+     1) llegar a la mas cercana de las dos, y
+     2) caminar de esa hasta la otra.
+
+     h(n) = max   [ min( d_L(p, A), d_L(p, B) ) + d_L(A, B) ]
+          A,B en F
+  (Si A = B, el termino queda d_L(p, A): la comida mas lejana, igual que la heuristica 1
+   pero respetando paredes. Por eso esta h siempre es >= que la heuristica 1.)
+  """
+  position, foodGrid = state
+  comidas = foodGrid.asList()
+  if not comidas:
+    return 0
+
+  mejor = 0
+  for i in range(len(comidas)):
+    for j in range(i, len(comidas)):
+      A, B = comidas[i], comidas[j]
+      llegar = min(distanciaLaberinto(position, A, problem, usarCache),
+                   distanciaLaberinto(position, B, problem, usarCache))
+      cruzar = distanciaLaberinto(A, B, problem, usarCache)
+      mejor = max(mejor, llegar + cruzar)
+  return mejor
+
+def foodHeuristicSinCache(state, problem):
+  "Igual que foodHeuristic, pero recalculando los BFS cada vez (solo para comparar tiempos)."
+  return foodHeuristic(state, problem, usarCache=False)
+
 class ClosestDotSearchAgent(SearchAgent):
   "Search for all food using a sequence of searches"
   def registerInitialState(self, state):
